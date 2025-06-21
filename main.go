@@ -18,9 +18,13 @@ type result struct {
 	err      error
 }
 
-var logger = log.New(os.Stderr, "", log.LstdFlags)
+var logger = log.New(os.Stderr, "[debug] ", log.LstdFlags|log.Lshortfile)
 
 func main() {
+	defer os.Stderr.Sync()
+
+	logger.Println("starting program")
+
 	urls, err := readURLs(os.Stdin)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "input error:", err)
