@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -17,12 +18,16 @@ type result struct {
 	err      error
 }
 
+var logger = log.New(os.Stderr, "", log.LstdFlags)
+
 func main() {
 	urls, err := readURLs(os.Stdin)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "input error:", err)
 		os.Exit(1)
 	}
+
+	logger.Printf("read %d urls", len(urls))
 
 	var results []result
 	for _, u := range urls {
@@ -48,16 +53,20 @@ func readURLs(r io.Reader) ([]string, error) {
 }
 
 func checkURL(ctx context.Context, client *http.Client, url string) result {
+	logger.Printf("checking %s", url)
 	start := time.Now()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
+		logger.Printf("request creation error for %s: %v", url, err)
 		return result{url: url, err: err}
 	}
 	resp, err := client.Do(req)
 	dur := time.Since(start)
 	if err != nil {
+		logger.Printf("request error for %s: %v", url, err)
 		return result{url: url, duration: dur, err: err}
 	}
 	resp.Body.Close()
+	logger.Printf("done %s status=%d duration=%s", url, resp.StatusCode, dur)
 	return result{url: url, status: resp.StatusCode, duration: dur}
 }
